@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>上傳 Excel 資料</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .upload-container {
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 30px;
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="container upload-container">
+    <h3 class="mb-4 text-center">🔄 上傳 Excel 更新資料庫</h3>
+
+    <p class="text-danger text-center font-weight-bold mb-3">
+        ⚠️ 請使用與資料庫欄位一致的 Excel 檔案上傳，避免格式錯誤。
+    </p>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data">
+      <div class="form-group">
+        <label for="file1">體檢表 Excel</label>
+        <input type="file" name="體檢表" id="file1" accept=".xlsx" class="form-control-file">
+      </div>
+
+      <div class="form-group">
+        <label for="file2">巡查表 Excel</label>
+        <input type="file" name="巡查表" id="file2" accept=".xlsx" class="form-control-file">
+      </div>
+
+      <button type="submit" class="btn btn-success btn-block">⬆️ 上傳並更新資料庫</button>
+      <a href="{{ url_for('index') }}" class="btn btn-secondary btn-block mt-2">返回查詢頁面</a>
+    </form>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+  
+  

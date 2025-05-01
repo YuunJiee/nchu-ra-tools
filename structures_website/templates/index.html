@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>構造物資料庫查詢</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png">
+    <style>
+        .table-container {
+            width: 90%;
+            margin: 0 auto;
+            padding: 10px;
+        }
+        .table-responsive {
+            overflow-x: auto;
+            max-height: 300px;
+        }
+        table td, table th {
+            white-space: nowrap;
+        }
+        table thead th {
+            position: sticky; /* 固定標頭 */
+            top: 0; /* 將標頭固定在滾動容器的頂部 */
+            background-color: #f9f9f9; /* 設置標頭背景色 */
+            z-index: 2; /* 確保標頭位於其他內容上方 */
+        }
+
+        .highlight-row {
+            background-color: #d4edda; /* 綠色背景 */
+        }
+
+        #yearContainer {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .year-item {
+            text-align: center;
+        }
+        .dot {
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .green {
+            background-color: green;
+        }
+        .red {
+            background-color: red;
+        }
+    </style>
+</head>
+<body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="container">
+        <h1 class="my-4 text-center">構造物資料庫查詢</h1>
+
+        <div class="text-right mb-3">
+            <a href="/upload" class="btn btn-warning">上傳 Excel 更新資料庫</a>
+        </div>
+          
+        <!-- 搜尋表單 -->
+        <form method="POST" class="mb-4">
+            <div class="form-row justify-content-center">
+                <div class="form-group col-md-4">
+                    <label for="field">選擇欄位</label>
+                    <select name="field" id="field" class="form-control" required>
+                        {% for col in structure_fields %}
+                        <option value="{{ col }}" {% if col == selected_field %}selected{% endif %}>{{ col }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="keyword">關鍵字</label>
+                    <input type="text" name="keyword" id="keyword" class="form-control" placeholder="請輸入關鍵字" value="{{ search_value }}" required>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="btn btn-primary form-control">搜尋</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- 體檢表資料 -->
+        <div class="text-center my-4">
+            <h3>體檢表資料</h3>
+        </div>
+        <div class="table-container">
+            <div class="table-responsive">
+                <table id="structureTable" class="table table-bordered table-hover">
+                    <thead>
+                        {% if structure_data %}
+                        <tr>
+                            {% for col in structure_data[0].keys() %}
+                            <th>{{ col }}</th>
+                            {% endfor %}
+                        </tr>
+                        {% endif %}
+                    </thead>
+                    <tbody>
+                        {% for row in structure_data %}
+                        <tr data-fid="{{ row['FID'] }}">
+                            {% for cell in row.values() %}
+                            <td>
+                                {% if cell is none or cell == '' %}
+                                    -
+                                {% else %}
+                                    {{ cell }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="100%" class="text-center">沒有體檢資料</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 巡查年份 -->
+        <div class="text-center my-4">
+            <h3>巡查年份</h3>
+        </div>
+        <div id="yearContainer">
+            {% for year in [111, 112, 113] %}
+            <div class="year-item">
+                {{ year }} 年: 
+                <span class="dot {{ 'green' if year|string in inspection_years else 'red' }}"></span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 巡查表資料 -->
+        <div class="text-center my-4">
+            <h3>巡查表資料</h3>
+        </div>
+        <div class="table-container">
+            <div class="table-responsive">
+                <table id="inspectionTable" class="table table-bordered table-hover">
+                    <thead>
+                        {% if structure_data|length == 1 and inspection_data %}
+                            <tr>
+                                {% for col in inspection_data[0].keys() %}
+                                <th>{{ col }}</th>
+                                {% endfor %}
+                            </tr>
+                        {% endif %}
+                    </thead>
+                    <tbody>
+                        {% if structure_data|length > 1 %}
+                            <tr>
+                                <td colspan="100%" class="text-center">請選擇一筆體檢表以查找巡查表</td>
+                            </tr>
+                        {% elif inspection_data %}
+                            {% for row in inspection_data %}
+                            <tr>
+                                {% for cell in row.values() %}
+                                <td>
+                                    {% if cell is none or cell == '' %}
+                                        -
+                                    {% else %}
+                                        {{ cell }}
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="100%" class="text-center">沒有巡查資料</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+    <div class="text-center text-muted mb-3">
+        最後更新時間：{{ last_update_time }}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const structureTable = document.getElementById('structureTable');
+            const yearContainer = document.getElementById('yearContainer');
+            const inspectionTable = document.getElementById('inspectionTable');
+
+            structureTable.addEventListener('click', function (e) {
+                const row = e.target.closest('tr');
+                if (!row || !row.dataset.fid) return;
+
+                // 移除之前的高亮
+                document.querySelectorAll('#structureTable tr').forEach(tr => {
+                    tr.classList.remove('highlight-row');
+                });
+
+                // 高亮當前選中的行
+                row.classList.add('highlight-row');
+
+                // 獲取 FID
+                const fid = row.dataset.fid;
+
+                // 使用 Fetch 請求巡查表資料
+                fetch(`/fetch_inspection_data?fid=${fid}`)
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then((data) => {
+                        const tbody = inspectionTable.querySelector('tbody');
+                        const thead = inspectionTable.querySelector('thead');
+                        const fields = data.fields; // 從後端獲取的欄位順序
+
+                        if(data.years && data.years.length > 0) {
+                            tbody.innerHTML = '';
+                            thead.innerHTML = '';
+
+                            // 根據 fields 構建表頭
+                            thead.innerHTML = `<tr>${fields.map(field => `<th>${field}</th>`).join('')}</tr>`;
+
+                            // 按照 fields 順序構建表格內容
+                            data.inspectionData.forEach((row) => {
+                                const rowHTML = `<tr>${fields.map(field => `<td>${row[field] !== undefined && row[field] !== null && row[field] !== '' ? row[field] : '-'}</td>`).join('')}</tr>`;
+                                tbody.innerHTML += rowHTML;
+                            });
+
+                            // 更新巡查年份
+                            yearContainer.innerHTML = '';
+                            [111, 112, 113].forEach((year) => {
+                                const colorClass = data.years && data.years.includes(year.toString()) ? 'green' : 'red';
+                                yearContainer.innerHTML += `
+                                    <div class="year-item">
+                                        ${year} 年: <span class="dot ${colorClass}"></span>
+                                    </div>`;
+                            });
+                        }else{
+                            thead.innerHTML = '';
+                            tbody.innerHTML = `
+                            <tr>
+                                <td colspan="100%" class="text-center">沒有巡查資料</td>
+                            </tr>`;
+                            yearContainer.innerHTML = '';
+                                [111, 112, 113].forEach((year) => {
+                                    yearContainer.innerHTML += `
+                                        <div class="year-item">
+                                            ${year} 年: <span class="dot red"></span>
+                                        </div>`;
+                                });
+                            }
+                    })
+                    .catch((error) => {
+                        console.error("Error fetching inspection data:", error);
+                        // 顯示錯誤訊息
+                        tbody.innerHTML = `
+                        <tr>
+                            <td colspan="100%" class="text-center">載入巡查資料時發生錯誤</td>
+                        </tr>`;
+
+                        // 清空年份並標示為紅色
+                        yearContainer.innerHTML = '';
+                        [111, 112, 113].forEach((year) => {
+                            yearContainer.innerHTML += `
+                                <div class="year-item">
+                                    ${year} 年: <span class="dot red"></span>
+                                </div>`;
+                        });
+                    });
+
+            });
+        });
+    </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>    
+</body>
+</html>
+
+
+
+
+
+
+
+
