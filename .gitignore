@@ -1,0 +1,24 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# VSCode settings
+.vscode/
+
+# Virtual environments
+venv/
+.env/
+
+# PyInstaller
+*.spec
+*.exe
+build/
+dist/
+
+# macOS
+.DS_Store
+
+# Jupyter (if applicable)
+.ipynb_checkpoints/
+
+*.xlsx
