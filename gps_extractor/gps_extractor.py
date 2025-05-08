@@ -1,4 +1,6 @@
 import os
+import platform
+import subprocess
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from openpyxl import Workbook
@@ -186,7 +188,12 @@ class EXIFtoExcelApp:
         path = self.output_path.get()
         if path and os.path.exists(path):
             try:
-                os.startfile(path)
+                if platform.system() == "Windows":
+                    os.startfile(path)
+                elif platform.system() == "Darwin":  # macOS
+                    subprocess.call(["open", path])
+                else:  # Linux
+                    subprocess.call(["xdg-open", path])
             except Exception as e:
                 messagebox.showerror("Error", f"Cannot open file:\n{e}")
 
