@@ -22,3 +22,9 @@ dist/
 .ipynb_checkpoints/
 
 *.xlsx
+exiftool-13.29_64
+
+*.jpg
+*.png
+
+web_get_rainfall/
